@@ -1,6 +1,6 @@
 <?php
 namespace App\Controllers;
-use App\Models\{Users, Blog};
+use App\Models\{Users, Blog, Comment};
 use Laminas\Diactoros\Response\HtmlResponse;
 
 class UsersController extends BaseController
@@ -15,41 +15,60 @@ class UsersController extends BaseController
         $user->password = password_hash($postData["password"], PASSWORD_BCRYPT);
         $user->save();
 
-        // Establecer una cookie con el mensaje de éxito
-        setcookie('success_message', 'Usuario añadido correctamente', time() + 60, '/');
+        $cookie = setcookie('success_message', 'El blog se ha añadido exitosamente', time() + 60, '/');
 
-        // Redireccionar a una página diferente después de agregar el usuario
-        header("Location: /addUser");
-        exit();
-        
+        $data = [];
+        $blogs = Blog::all();
+        $data['blogs'] = $blogs;
+        $user = isset($_SESSION['userId']) ? Users::find($_SESSION['userId'])->id : null;
+
+        $data['comments'] = [];
+        $data['tags'] = [];
+
+        foreach ($blogs as $blog) {
+            foreach ($blog->comment as $comment) {
+                $data['comments'][] = $comment;
+            }
+            $tags = explode(',', $blog->tags); 
+            $data['tags'] = array_merge($data['tags'], $tags);
+        };
+        $data['comments'] = array_reverse(array_slice($data['comments'], -5));
+
+        $tagCount = array_count_values($data['tags']);
+        $data['tagCloud'] = $tagCount;
+
+        return $this->renderHTML('addUser.twig', [
+            'cookie' => $cookie,
+            'blogs' => $blogs,
+            'comments' => $data['comments'],
+            'tagCloud' => $data['tagCloud'],
+            'userId' => $user
+        ]);
     }
 
     public function newUserAction() {
         $data = [];
         $blogs = Blog::all();
-        // $data['blogs'] = $blogs;
-
-        // Inicializar el array de comentarios
         $data['comments'] = [];
-
+        $user = isset($_SESSION['userId']) ? Users::find($_SESSION['userId'])->id : null;
         $data['tags'] = [];
 
-
-        // Sacar todos los comentarios de todos los blogs
         foreach ($blogs as $blog) {
             foreach ($blog->comment as $comment) {
-                $data['comments'][] = $comment; // Agrega el objeto completo del comentario
+                $data['comments'][] = $comment;
             }
-            // Obtener los tags de cada blog
-            $tags = explode(',', $blog->tags); // Suponiendo que los tags están separados por comas
+            $tags = explode(',', $blog->tags);
             $data['tags'] = array_merge($data['tags'], $tags);
         };
-        // Seleccionar los últimos 5 comentarios
-        $data['comments'] = array_slice($data['comments'], -5);
+        $data['comments'] = array_reverse(array_slice($data['comments'], -5));
 
-        // Obtener la nube de tags
         $tagCount = array_count_values($data['tags']);
         $data['tagCloud'] = $tagCount;
-        return new HtmlResponse($this->renderHTML('../views/addUser_view.php', $data));
+        return $this->renderHTML('addUser.twig', [
+            'blogs' => $blogs,
+            'comments' => $data['comments'],
+            'tagCloud' => $data['tagCloud'],
+            'userId' => $user
+        ]);
     }
 }

@@ -1,0 +1,24 @@
+{% extends 'layout.twig' %}
+{% block body %}
+    <h1>Iniciar sesión</h1>
+    {% if app.request.cookies.has('success_message') %}
+        {% set successMessage = app.request.cookies.get('success_message') %}
+        <div class="blogger-notice">{{ successMessage }}</div>
+        {% set cookieOptions = { expires: 0, path: '/' } %}
+        {{ app.response.deleteCookie('success_message', cookieOptions) }}
+    {% endif %}
+
+    <form class="blogger" action="/login" method="post">
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div>
+            <input type="submit" name="submit" value="Enviar">
+        </div>
+    </form>
+{% endblock %}

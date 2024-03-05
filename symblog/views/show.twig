@@ -1,0 +1,50 @@
+{% extends 'layout.twig' %}
+
+{% block body %}
+<article class="blog">
+    <div class="date">
+        <time datetime=" \">{{ blog.created | date('l, F j, Y') }}</time>
+    </div>
+    <header>
+        <h2>{{ blog.title }}</h2>
+    </header>
+    <img src="img/{{ blog.image }}" />
+    <div class="snippet">
+        <p>{{ blog.blog }}</p>
+    </div>
+    <footer class="meta">
+        <p>Comments: <a href="#">{{ blog.numComments() }}</a></p>
+        <p>Posted by <span class="highlight">{{ blog.author }}</span> at 07:06PM</p>
+        <p>Tags: <span class="highlight">{{ blog.tags }}</span></p>
+    </footer>
+</article>
+
+<section class="comments">
+    {% if userId %}
+        <p>{{ userEmail }}</p>
+        <form class="blogger" action="" method="post">
+            <div>
+                <label for="comment">Comentario:</label>
+                <textarea id="comment" name="comment" required></textarea>
+            </div>
+            <div>
+                <input name="comentar" type="submit" value="Comentar">
+            </div>
+            </form>
+    {% else %}
+        <p class="blogger-notice">Para comentar debes estar logueado</p>
+    {% endif %}
+    <h3>Comments</h3>
+    {% if blog.getComments() is empty %}
+        <p>No hay comentarios</p>
+    {% else %}
+        {% for key, comment in blog.comments %}
+            {% set class = (key is even) ? 'comment odd' : 'comment' %}
+            <article class="{{ class }}">
+                <p><span class="highlight">{{ comment.user }} {{ comment.created.diff(now).days }} days</span> commented {{ comment.created | date('l, F j, Y') }}</p>
+                <p>{{ comment.comment }}<p>
+            </article>
+        {% endfor %}
+    {% endif %}
+</section>
+{% endblock %}

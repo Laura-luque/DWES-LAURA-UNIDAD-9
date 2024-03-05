@@ -7,7 +7,7 @@ use App\Controllers\IndexControllers;
 use App\Controllers\UsersController;
 use App\Controllers\AuthController;
 use Aura\Router\RouterContainer;
-
+// use  Laminas\Diactoros\Response\HtmlResponse;
 session_start();
 
 $request = Laminas\Diactoros\ServerRequestFactory::fromGlobals(

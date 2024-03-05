@@ -1,6 +1,6 @@
 <?php
 namespace App\Controllers;
-use App\Models\{Users, Blog};
+use App\Models\{Users, Blog, Comment};
 use Laminas\Diactoros\Response\RedirectResponse;
 use Laminas\Diactoros\Response\HtmlResponse;
 
@@ -9,31 +9,28 @@ class AuthController extends BaseController
     public function formLoginAction() {
         $data = [];
         $blogs = Blog::all();
-
-        // Inicializar el array de comentarios
         $data['comments'] = [];
         $data['tags'] = [];
 
-        // Sacar todos los comentarios de todos los blogs
         foreach ($blogs as $blog) {
             foreach ($blog->comment as $comment) {
-                $data['comments'][] = $comment; // Agrega el objeto completo del comentario
+                $data['comments'][] = $comment; 
             }
-            // Obtener los tags de cada blog
-            $tags = explode(',', $blog->tags); // Suponiendo que los tags están separados por comas
+            $tags = explode(',', $blog->tags);
             $data['tags'] = array_merge($data['tags'], $tags);
         };
-        // Seleccionar los últimos 5 comentarios
-        $data['comments'] = array_slice($data['comments'], -5);
-
-        // Obtener la nube de tags
+        $data['comments'] = array_reverse(array_slice($data['comments'], -5));
         $tagCount = array_count_values($data['tags']);
         $data['tagCloud'] = $tagCount;
-        return new HtmlResponse($this->renderHTML('../views/login_view.php', $data));
+
+        return $this->renderHTML('login.twig', [
+            'blogs' => $blogs,
+            'comments' => $data['comments'],
+            'tagCloud' => $data['tagCloud']
+        ]);
     }
 
     public function postLoginAction($request) {
-        // var_dump($request);
         $postData = $request->getParsedBody();
         $responseMessage = null;
 
@@ -54,29 +51,27 @@ class AuthController extends BaseController
 
         $data = [];
         $blogs = Blog::all();
-
-        // Inicializar el array de comentarios
         $data['comments'] = [];
         $data['tags'] = [];
 
-        // Sacar todos los comentarios de todos los blogs
         foreach ($blogs as $blog) {
             foreach ($blog->comment as $comment) {
-                $data['comments'][] = $comment; // Agrega el objeto completo del comentario
+                $data['comments'][] = $comment;
             }
-            // Obtener los tags de cada blog
-            $tags = explode(',', $blog->tags); // Suponiendo que los tags están separados por comas
+            $tags = explode(',', $blog->tags);
             $data['tags'] = array_merge($data['tags'], $tags);
         };
-        // Seleccionar los últimos 5 comentarios
-        $data['comments'] = array_slice($data['comments'], -5);
+        $data['comments'] = array_reverse(array_slice($data['comments'], -5));
 
-        // Obtener la nube de tags
         $tagCount = array_count_values($data['tags']);
         $data['tagCloud'] = $tagCount;
         $data['respuesta'] = $responseMessage;
-        return new HtmlResponse($this->renderHTML('../views/login_view.php', $data));
 
+        return $this->renderHTML('login.twig', [
+            'blogs' => $blogs,
+            'comments' => $data['comments'],
+            'tagCloud' => $data['tagCloud']
+        ]);
     }
 
     public function getLogout(){

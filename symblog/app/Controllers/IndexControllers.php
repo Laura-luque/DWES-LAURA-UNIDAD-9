@@ -2,9 +2,11 @@
 
 namespace App\Controllers;
 
-use App\Models\{Blog, Users, Comment};
+use App\Models\{Blog, Users};
+use App\Models\Comment;
 use Respect\Validation\Validator as v;
 use Laminas\Diactoros\Response\HtmlResponse;
+
 
 
 class IndexControllers extends BaseController
@@ -12,34 +14,31 @@ class IndexControllers extends BaseController
     public function indexAction()
     {
         $data = [];
-        // $blogs = Blog::all();
-        $blogs = Blog::orderBy('created', 'desc')->get();
+        $blogs = Blog::all();
         $data['blogs'] = $blogs;
+        $user = isset($_SESSION['userId']) ? Users::find($_SESSION['userId'])->id : null;
 
-        // Inicializar el array de comentarios
         $data['comments'] = [];
         $data['tags'] = [];
 
-        // Sacar todos los comentarios de todos los blogs
         foreach ($blogs as $blog) {
             foreach ($blog->comment as $comment) {
-                $data['comments'][] = $comment; // Agrega el objeto completo del comentario
+                $data['comments'][] = $comment;
             }
-
-            // Obtener los tags de cada blog
-            $tags = explode(',', $blog->tags); // Suponiendo que los tags están separados por comas
+            $tags = explode(',', $blog->tags);
             $data['tags'] = array_merge($data['tags'], $tags);
-        }
+        };
+        $data['comments'] = array_reverse(array_slice($data['comments'], -5));
 
-        // Seleccionar los últimos 5 comentarios
-        $data['comments'] = array_slice($data['comments'], -5);
-
-        // Obtener la nube de tags
         $tagCount = array_count_values($data['tags']);
         $data['tagCloud'] = $tagCount;
-        
 
-        return new HtmlResponse($this->renderHTML('../views/index_view.php', $data));
+        return $this->renderHTML('index.twig', [
+            'blogs' => array_reverse($blogs->toArray()),
+            'comments' => $data['comments'],
+            'tagCloud' => $data['tagCloud'],
+            'userId' => $user
+        ]);
     }
 
 
@@ -48,35 +47,33 @@ class IndexControllers extends BaseController
         $data = [];
         $blogs = Blog::all();
         $data['blogs'] = $blogs;
-
-        // Inicializar el array de comentarios
+        $user = isset($_SESSION['userId']) ? Users::find($_SESSION['userId'])->id : null;
         $data['comments'] = [];
-
         $data['tags'] = [];
 
-
-        // Sacar todos los comentarios de todos los blogs
         foreach ($blogs as $blog) {
             foreach ($blog->comment as $comment) {
-                $data['comments'][] = $comment; // Agrega el objeto completo del comentario
+                $data['comments'][] = $comment;
             }
-            // Obtener los tags de cada blog
-            $tags = explode(',', $blog->tags); // Suponiendo que los tags están separados por comas
+            $tags = explode(',', $blog->tags); 
             $data['tags'] = array_merge($data['tags'], $tags);
         };
-        // Seleccionar los últimos 5 comentarios
-        $data['comments'] = array_slice($data['comments'], -5);
+        $data['comments'] = array_reverse(array_slice($data['comments'], -5));
 
-        // Obtener la nube de tags
         $tagCount = array_count_values($data['tags']);
         $data['tagCloud'] = $tagCount;
 
-        return new HtmlResponse($this->renderHTML('../views/about_view.php', $data));
+        return $this->renderHTML('about.twig', [
+            'blogs' => $blogs,
+            'comments' => $data['comments'],
+            'tagCloud' => $data['tagCloud'],
+            'userId' => $user
+        ]);
     }
 
     public function addBlogAction($request){
         $responseMessage = null;
-        
+
         $postData = $request->getParsedBody();
         $blogValidator = v::key('title',v::stringType()->notEmpty())
                         ->key('description',v::stringType()->notEmpty())
@@ -93,9 +90,7 @@ class IndexControllers extends BaseController
                 'tags' => $postData['tags'],
             ]);
 
-            //carga de ficheros
             $files = $request ->getUploadedFiles();
-            var_dump($files);
             $imagen = $files['image'];
             if($imagen->getError() == UPLOAD_ERR_OK){
                 $fileName = $imagen->getClientFilename();
@@ -108,44 +103,65 @@ class IndexControllers extends BaseController
         } catch (\Exception $e){
             $responseMessage = $e->getMessage();
         }
-        
-        // Establecer una cookie con el mensaje de éxito
-        setcookie('success_message', 'El blog se ha añadido exitosamente', time() + 60, '/');
 
-        // Redireccionar a una página diferente después de agregar el blog
-        header("Location: /addBlog");
-        exit();
-        // return $this->renderHTML('../views/addBlog_view.php');
+        $cookie = setcookie('success_message', 'El blog se ha añadido exitosamente', time() + 60, '/');
+
+        $data = [];
+        $blogs = Blog::all();
+        $data['blogs'] = $blogs;
+        $user = isset($_SESSION['userId']) ? Users::find($_SESSION['userId'])->id : null;
+        $data['comments'] = [];
+        $data['tags'] = [];
+
+        foreach ($blogs as $blog) {
+            foreach ($blog->comment as $comment) {
+                $data['comments'][] = $comment;
+            }
+            $tags = explode(',', $blog->tags);
+            $data['tags'] = array_merge($data['tags'], $tags);
+        };
+        $data['comments'] = array_reverse(array_slice($data['comments'], -5));
+
+        $tagCount = array_count_values($data['tags']);
+        $data['tagCloud'] = $tagCount;
+
+        return $this->renderHTML('addBlog.twig', [
+            'cookie' => $cookie,
+            'blogs' => $blogs,
+            'comments' => $data['comments'],
+            'tagCloud' => $data['tagCloud'],
+            'userId' => $user
+        ]);
     }
 
     public function newBlogAction()
 {
     $data = [];
-        $blogs = Blog::all();
-        $data['blogs'] = $blogs;
+    $blogs = Blog::all();
+    $data['blogs'] = $blogs;
+    $user = isset($_SESSION['userId']) ? Users::find($_SESSION['userId'])->id : null;
 
-        // Inicializar el array de comentarios
-        $data['comments'] = [];
+    $data['comments'] = [];
+    $data['tags'] = [];
 
-        $data['tags'] = [];
+    foreach ($blogs as $blog) {
+        foreach ($blog->comment as $comment) {
+            $data['comments'][] = $comment; 
+        }
+        $tags = explode(',', $blog->tags);
+        $data['tags'] = array_merge($data['tags'], $tags);
+    };
+    $data['comments'] = array_reverse(array_slice($data['comments'], -5));
 
-        // Sacar todos los comentarios de todos los blogs
-        foreach ($blogs as $blog) {
-            foreach ($blog->comment as $comment) {
-                $data['comments'][] = $comment; // Agrega el objeto completo del comentario
-            }
-            // Obtener los tags de cada blog
-            $tags = explode(',', $blog->tags); // Suponiendo que los tags están separados por comas
-            $data['tags'] = array_merge($data['tags'], $tags);
-        };
-        // Seleccionar los últimos 5 comentarios
-        $data['comments'] = array_slice($data['comments'], -5);
+    $tagCount = array_count_values($data['tags']);
+    $data['tagCloud'] = $tagCount;
 
-        // Obtener la nube de tags
-        $tagCount = array_count_values($data['tags']);
-        $data['tagCloud'] = $tagCount;
-
-        return new HtmlResponse($this->renderHTML('../views/addBlog_view.php', $data));
+    return $this->renderHTML('addBlog.twig', [
+        'blogs' => $blogs,
+        'comments' => $data['comments'],
+        'tagCloud' => $data['tagCloud'],
+        'userId' => $user
+    ]);
 }
 
     public function contactAction()
@@ -153,56 +169,59 @@ class IndexControllers extends BaseController
         $data = [];
         $blogs = Blog::all();
         $data['blogs'] = $blogs;
-
-        // Inicializar el array de comentarios
+        $user = isset($_SESSION['userId']) ? Users::find($_SESSION['userId'])->id : null;
         $data['comments'] = [];
 
         $data['tags'] = [];
 
-        // Sacar todos los comentarios de todos los blogs
         foreach ($blogs as $blog) {
             foreach ($blog->comment as $comment) {
-                $data['comments'][] = $comment; // Agrega el objeto completo del comentario
+                $data['comments'][] = $comment;
             }
-            // Obtener los tags de cada blog
-            $tags = explode(',', $blog->tags); // Suponiendo que los tags están separados por comas
+            $tags = explode(',', $blog->tags);
             $data['tags'] = array_merge($data['tags'], $tags);
         };
-        // Seleccionar los últimos 5 comentarios
-        $data['comments'] = array_slice($data['comments'], -5);
+        $data['comments'] = array_reverse(array_slice($data['comments'], -5));
 
-        // Obtener la nube de tags
         $tagCount = array_count_values($data['tags']);
         $data['tagCloud'] = $tagCount;
-        return new HtmlResponse($this->renderHTML('../views/contact_view.php', $data));
+        return $this->renderHTML('contact.twig', [
+            'blogs' => $blogs,
+            'comments' => $data['comments'],
+            'tagCloud' => $data['tagCloud'],
+            'userId' => $user
+        ]);
     }
 
     public function showAction($request)
     {
         $data = [];
         $data['blog'] = Blog::find($_GET['id']);
-        $data['user'] = isset($_SESSION['userId']) ? Users::find($_SESSION['userId']) : null;
-        $data['comments'] = [];
+        $user = isset($_SESSION['userId']) ? Users::find($_SESSION['userId'])->id : null;
+        $userEmail = isset($_SESSION['userId']) ? Users::find($_SESSION['userId'])->email : null;
 
+        $data['comments'] = [];
         $data['tags'] = [];
 
-        // Sacar todos los comentarios de todos los blogs
         foreach (Blog::all() as $blog) {
             foreach ($blog->comment as $comment) {
-                $data['comments'][] = $comment; // Agrega el objeto completo del comentario
+                $data['comments'][] = $comment; 
             }
-            // Obtener los tags de cada blog
-            $tags = explode(',', $blog->tags); // Suponiendo que los tags están separados por comas
+            $tags = explode(',', $blog->tags);
             $data['tags'] = array_merge($data['tags'], $tags);
         };
-        // Seleccionar los últimos 5 comentarios
 
-        $data['comments'] = array_slice($data['comments'], -5);
+        $data['comments'] = array_reverse(array_slice($data['comments'], -5));
 
-        // Obtener la nube de tags
         $tagCount = array_count_values($data['tags']);
         $data['tagCloud'] = $tagCount;
-        return new HtmlResponse($this->renderHTML('../views/show_view.php', $data));
+        return $this->renderHTML('show.twig', [
+            'blog' => $data['blog'],
+            'comments' => $data['comments'],
+            'tagCloud' => $data['tagCloud'],
+            'userId' => $user,
+            'userEmail' => $userEmail
+        ]);
     }
 
     public function addComments($request) {
@@ -221,7 +240,5 @@ class IndexControllers extends BaseController
 
         header('Location: /show?id='.$_GET["id"].'');
         exit();
-
     }
-
 }

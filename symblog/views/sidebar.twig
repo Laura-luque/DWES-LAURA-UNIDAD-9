@@ -1,0 +1,30 @@
+<section class="section">
+    <header>
+        <h3>Tag Cloud</h3>
+    </header>
+    <p class="tags">
+        {% for tag,count in tagCloud %}
+            {% if count >= 5 %}
+                <span class="weight-5">{{ tag }}</span>
+            {% else %}
+                <span class="weight-{{ count }}">{{ tag }}</span>
+            {% endif %}
+        {% endfor %}
+    </p>
+</section>
+
+<section class="section">
+    <header>
+        <h3>Latest Comments</h3>
+    </header>
+    <article class="comment">
+        {% for comment in comments %}
+            <header>
+                <p class="small"><span class="highlight">{{ comment.user }}</span> commented on
+                    <a href="#">{{ comment.blog ? comment.blog.title : 'Unknown Blog' }}</a>
+                </p>
+            </header>
+            <p>{{ comment.comment }}</p>
+        {% endfor %}
+    </article>
+</section>
